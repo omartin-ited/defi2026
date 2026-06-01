@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Défi AAActif – 1er au 14 juin 2026</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
@@ -504,7 +505,7 @@
     flex-wrap: wrap;
   }
 
-  .btn-print, .btn-pdf {
+  .btn-print, .btn-apercu {
     border: none;
     border-radius: 8px;
     padding: 0.65rem 1.5rem;
@@ -522,12 +523,92 @@
 
   .btn-print:hover { background: #253571; }
 
-  .btn-pdf {
+  .btn-apercu {
     background: var(--gold);
     color: var(--navy);
   }
 
-  .btn-pdf:hover { background: var(--gold-dark); color: var(--white); }
+  .btn-apercu:hover { background: var(--gold-dark); color: var(--white); }
+
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 2rem;
+    max-width: 560px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: var(--muted);
+    line-height: 1;
+    font-family: 'Source Sans 3', sans-serif;
+  }
+  .modal-close:hover { color: var(--text); }
+  .modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--navy);
+    margin-bottom: 1.25rem;
+    padding-right: 2rem;
+  }
+  .modal-total {
+    background: var(--navy);
+    border-radius: 10px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .modal-total .lbl { font-size: 0.85rem; color: rgba(255,255,255,0.6); }
+  .modal-total .val { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--gold); }
+  .modal-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 0.5px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .modal-row:last-child { border-bottom: none; }
+  .modal-row .r-lbl { color: var(--muted); }
+  .modal-row .r-val { font-weight: 600; color: var(--navy); }
+  .modal-sub {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    margin: 14px 0 8px;
+  }
+  .modal-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .modal-chip {
+    font-size: 0.75rem;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-weight: 600;
+  }
+  .modal-chip.white { background: var(--off-white); color: var(--navy); border: 1px solid var(--border); }
+  .modal-chip.gold { background: var(--gold); color: var(--navy); }
 
   /* PRINT STYLES */
   @media print {
@@ -625,7 +706,7 @@
 
   <!-- CALCULATEUR IMPRIMABLE -->
   <div class="print-section no-print">
-    <div class="section-title" style="margin-bottom:1rem;">Exporter / Imprimer</div>
+    <div class="section-title" style="margin-bottom:1rem;">Aperçu &amp; Impression</div>
     <div class="print-name-row">
       <label>Nom du participant :</label>
       <input type="text" id="participantName" placeholder="Votre nom..." />
@@ -633,9 +714,15 @@
       <input type="text" id="companyName" placeholder="Nom de l'entreprise..." style="max-width:220px;" />
     </div>
     <div class="action-row">
+      <button class="btn-apercu" onclick="showApercu()">👁 Aperçu</button>
       <button class="btn-print" onclick="printResult()">🖨 Imprimer</button>
-      <button class="btn-pdf" onclick="exportPDF()">⬇ Exporter en PDF</button>
     </div>
+  </div>
+
+
+  <!-- MODALE APERÇU -->
+  <div class="modal-overlay no-print" id="modalOverlay" onclick="closeApercu(event)">
+    <div class="modal-box" id="modalBox"></div>
   </div>
 
   <!-- ZONE D'IMPRESSION (cachée normalement) -->
@@ -649,18 +736,18 @@ const CELLS = [
   { text: "Activité sportive en nature", type: "gold", icon: "🌲" },
   { text: "30 minutes de yoga", type: "white", icon: "🧘" },
   { text: "Activité sportive avec un animal de compagnie", type: "gold", icon: "🐾" },
-  { text: "Sortie en vélo", type: "white", icon: "🚴" },
+  { text: "Sortie en vélo", type: "gold", icon: "🚴" },
   { text: "Pause active au travail", type: "white", icon: "⚡" },
   { text: "Partager une photo du défi sur LinkedIn #DefiAAActif", type: "gold", icon: "📸" },
-  { text: "10 minutes d'étirements", type: "gold", icon: "🤸" },
+  { text: "10 minutes d'étirements", type: "white", icon: "🤸" },
   { text: "Activité sportive dans ou sur l'eau", type: "white", icon: "🏄" },
   { text: "Essayer une nouvelle activité sportive", type: "gold", icon: "⭐" },
   { text: "Remplacer un déplacement en auto par la marche ou le vélo", type: "white", icon: "🚶" },
   { text: "Activité sportive costumée", type: "gold", icon: "🎭" },
-  { text: "Activité sportive avec un•e collègue", type: "white", icon: "🤝" },
+  { text: "Activité sportive avec un•e collègue", type: "gold", icon: "🤝" },
   { text: "Activité sportive en famille", type: "white", icon: "👨‍👩‍👧" },
   { text: "Faire une randonnée", type: "gold", icon: "🥾" },
-  { text: "Sport de raquette", type: "gold", icon: "🎾" },
+  { text: "Sport de raquette", type: "white", icon: "🎾" },
 ];
 
 const TEAM = [
@@ -842,8 +929,47 @@ function printResult() {
   setTimeout(() => { w.print(); }, 400);
 }
 
-function exportPDF() {
-  printResult();
+function showApercu() {
+  const name = document.getElementById('participantName').value || '—';
+  const company = document.getElementById('companyName').value || '—';
+  const whites = CELLS.filter((c,i) => c.type === 'white' && state.cells[i]).length;
+  const golds = CELLS.filter((c,i) => c.type === 'gold' && state.cells[i]).length;
+  const teamTotal = state.team.reduce((a,b) => a+b, 0);
+  const total = whites * 50 + golds * 100 + teamTotal * 150;
+  const completedCells = CELLS.filter((c,i) => state.cells[i]);
+  const teamLines = TEAM.map((t,i) => state.team[i] > 0 ? `${t.text} × ${state.team[i]}` : null).filter(Boolean);
+
+  const chipsHtml = completedCells.length > 0
+    ? `<div class="modal-sub">Activités complétées</div><div class="modal-chips">${completedCells.map(c => `<span class="modal-chip ${c.type}">${c.icon} ${c.text}</span>`).join('')}</div>`
+    : '';
+
+  const teamHtml = teamLines.length > 0
+    ? `<div class="modal-sub">Défis d'équipe réalisés</div>${teamLines.map(l => `<div style="font-size:0.85rem;color:var(--muted);padding:2px 0;">• ${l}</div>`).join('')}`
+    : '';
+
+  document.getElementById('modalBox').innerHTML = `
+    <button class="modal-close" onclick="closeApercu()">×</button>
+    <div class="modal-title">Récapitulatif – Défi AAActif</div>
+    <div style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">${name} &bull; ${company} &bull; ${new Date().toLocaleDateString('fr-CA',{year:'numeric',month:'long',day:'numeric'})}</div>
+    <div class="modal-total">
+      <div class="lbl">Total de points</div>
+      <div class="val">${total} pts</div>
+    </div>
+    <div>
+      <div class="modal-row"><span class="r-lbl">Cases blanches (${whites} × 50 pts)</span><span class="r-val">${whites * 50} pts</span></div>
+      <div class="modal-row"><span class="r-lbl">Cases dorées (${golds} × 100 pts)</span><span class="r-val">${golds * 100} pts</span></div>
+      <div class="modal-row"><span class="r-lbl">Défis d'équipe (${teamTotal} × 150 pts)</span><span class="r-val">${teamTotal * 150} pts</span></div>
+    </div>
+    ${chipsHtml}
+    ${teamHtml}
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeApercu(e) {
+  if (!e || e.target === document.getElementById('modalOverlay') || !e.target) {
+    document.getElementById('modalOverlay').classList.remove('open');
+  }
 }
 
 loadState();
